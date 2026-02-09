@@ -25,13 +25,9 @@ class _WebViewPageState extends State<WebViewPage> {
 
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..enableZoom(true)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (url) {
-            setState(() => isLoading = true);
-          },
-          onPageFinished: (url) {
+          onPageFinished: (_) {
             setState(() => isLoading = false);
           },
         ),
@@ -39,33 +35,36 @@ class _WebViewPageState extends State<WebViewPage> {
       ..loadRequest(Uri.parse(widget.url));
   }
 
-  /// 🔥 INI YANG PALING PENTING
-  Future<bool> _onWillPop() async {
-    if (await controller.canGoBack()) {
-      controller.goBack(); // mundur di web
-      return false; // jangan keluar halaman
-    }
-    return true; // kalau sudah mentok, baru keluar
-  }
-
   @override
   Widget build(BuildContext context) {
-    // ignore: deprecated_member_use
-    return WillPopScope(
-      onWillPop: _onWillPop, // intercept tombol back
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (await controller.canGoBack()) {
+          controller.goBack();
+        } else {
+          Navigator.pop(context);
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
-          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async {
+              if (await controller.canGoBack()) {
+                controller.goBack();
+              } else {
+                Navigator.pop(context);
+              }
+            },
+          ),
         ),
         body: Stack(
           children: [
             WebViewWidget(controller: controller),
-
             if (isLoading)
-              const Center(
-                child: CircularProgressIndicator(),
-              ),
+              const Center(child: CircularProgressIndicator()),
           ],
         ),
       ),

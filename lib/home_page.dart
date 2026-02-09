@@ -11,6 +11,18 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _index = 0;
 
+  void _openWeb(String url, String title) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WebViewPage(
+          url: url,
+          title: title,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,9 +35,29 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+
+      /// 🔥 NAVIGATION PRO
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+        onTap: (i) {
+          if (i == 1) {
+            _openWeb(
+              "https://presensi.masupra.sch.id",
+              "Presensi Online",
+            );
+            return;
+          }
+
+          if (i == 2) {
+            _openWeb(
+              "https://masupra.sch.id",
+              "Website Sekolah",
+            );
+            return;
+          }
+
+          setState(() => _index = i);
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Presensi'),
@@ -39,7 +71,9 @@ class _HomePageState extends State<HomePage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xff2f6ce5), Color(0xff4fa3f7)]),
+        gradient: LinearGradient(
+          colors: [Color(0xff2f6ce5), Color(0xff4fa3f7)],
+        ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -61,19 +95,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// 🔥 Sekarang hanya HOME (WebView tidak ditanam lagi)
   Widget _content() {
-    if (_index == 1) {
-      return const WebViewPage(
-        url: "https://presensi.masupra.sch.id",
-        title: "Presensi Online",
-      );
-    } else if (_index == 2) {
-      return const WebViewPage(
-        url: "https://masupra.sch.id",
-        title: "Website Sekolah",
-      );
-    }
-
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -82,6 +105,7 @@ class _HomePageState extends State<HomePage> {
           const Text("Selamat Datang 👋",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 15),
+
           Row(
             children: [
               _menuCard(
@@ -90,14 +114,9 @@ class _HomePageState extends State<HomePage> {
                 subtitle: "Akses sistem presensi sekolah",
                 label: "Login Presensi",
                 color: Colors.blue,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const WebViewPage(
-                      url: "https://presensi.masupra.sch.id",
-                      title: "Presensi",
-                    ),
-                  ),
+                onTap: () => _openWeb(
+                  "https://presensi.masupra.sch.id",
+                  "Presensi",
                 ),
               ),
               const SizedBox(width: 12),
@@ -107,19 +126,16 @@ class _HomePageState extends State<HomePage> {
                 subtitle: "Kunjungi website resmi",
                 label: "Buka Website",
                 color: Colors.green,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const WebViewPage(
-                      url: "https://masupra.sch.id",
-                      title: "Website",
-                    ),
-                  ),
+                onTap: () => _openWeb(
+                  "https://masupra.sch.id",
+                  "Website",
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 15),
+
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -186,7 +202,8 @@ class _HomePageState extends State<HomePage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: Text(label,
                   style: const TextStyle(
