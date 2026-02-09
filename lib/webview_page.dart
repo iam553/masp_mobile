@@ -27,12 +27,30 @@ class _WebViewPageState extends State<WebViewPage> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageFinished: (_) {
-            setState(() => isLoading = false);
-          },
+          onPageStarted: (_) => setState(() => isLoading = true),
+          onPageFinished: (_) => setState(() => isLoading = false),
         ),
       )
       ..loadRequest(Uri.parse(widget.url));
+  }
+
+  /// 🔥 BACK HANDLER PALING AMAN UNTUK SPA WEBSITE
+  Future<void> _handleBack() async {
+    try {
+      final result = await controller.runJavaScriptReturningResult(
+        'window.history.length',
+      );
+
+      final historyLength = int.tryParse(result.toString()) ?? 0;
+
+      if (historyLength > 1) {
+        await controller.runJavaScript('window.history.back();');
+      } else {
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (_) {
+      if (mounted) Navigator.pop(context);
+    }
   }
 
   @override
@@ -40,27 +58,13 @@ class _WebViewPageState extends State<WebViewPage> {
     return PopScope(
       canPop: false,
       // ignore: deprecated_member_use
-      onPopInvoked: (didPop) async {
-        if (await controller.canGoBack()) {
-          controller.goBack();
-        } else {
-          // ignore: use_build_context_synchronously
-          Navigator.pop(context);
-        }
-      },
+      onPopInvoked: (_) async => _handleBack(),
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () async {
-              if (await controller.canGoBack()) {
-                controller.goBack();
-              } else {
-                // ignore: use_build_context_synchronously
-                Navigator.pop(context);
-              }
-            },
+            onPressed: _handleBack,
           ),
         ),
         body: Stack(
