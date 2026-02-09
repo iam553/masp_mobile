@@ -39,10 +39,12 @@ class _WebViewPageState extends State<WebViewPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
+      // ignore: deprecated_member_use
       onPopInvoked: (didPop) async {
         if (await controller.canGoBack()) {
           controller.goBack();
         } else {
+          // ignore: use_build_context_synchronously
           Navigator.pop(context);
         }
       },
@@ -55,6 +57,7 @@ class _WebViewPageState extends State<WebViewPage> {
               if (await controller.canGoBack()) {
                 controller.goBack();
               } else {
+                // ignore: use_build_context_synchronously
                 Navigator.pop(context);
               }
             },
