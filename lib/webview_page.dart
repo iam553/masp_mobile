@@ -18,6 +18,11 @@ class WebViewPage extends StatefulWidget {
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController controller;
 
+  bool isLoading = true;
+
+  /// 🔥 PENYELAMAT MASALAH BACK
+  final List<String> history = [];
+
   @override
   void initState() {
     super.initState();
@@ -25,29 +30,46 @@ class _WebViewPageState extends State<WebViewPage> {
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..enableZoom(true)
+
+      /// WAJIB supaya WebView detect perpindahan halaman
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (url) {
+            history.add(url);
+            setState(() => isLoading = true);
+          },
+          onPageFinished: (url) {
+            setState(() => isLoading = false);
+          },
+        ),
+      )
+
       ..loadRequest(Uri.parse(widget.url));
   }
 
-  /// 🔥 INI KUNCINYA
-  // ignore: unused_element
-  Future<bool> _handleBack() async {
+  /// 🔥 LOGIC BACK PALING STABIL
+  Future<bool> _goBack() async {
     if (await controller.canGoBack()) {
-      controller.goBack(); // kembali ke halaman web sebelumnya
-      return false; // jangan keluar halaman
+      controller.goBack();
+      return false;
     }
-    return true; // kalau sudah tidak bisa → baru keluar
+
+    /// fallback kalau website pakai JS navigation
+    if (history.length > 1) {
+      history.removeLast();
+      controller.loadRequest(Uri.parse(history.last));
+      return false;
+    }
+
+    return true; // baru keluar ke home
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      // ignore: deprecated_member_use
       onPopInvoked: (didPop) async {
-        if (await controller.canGoBack()) {
-          controller.goBack();
-        } else {
-          // ignore: use_build_context_synchronously
+        if (await _goBack()) {
           Navigator.pop(context);
         }
       },
@@ -57,16 +79,20 @@ class _WebViewPageState extends State<WebViewPage> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () async {
-              if (await controller.canGoBack()) {
-                controller.goBack();
-              } else {
-                // ignore: use_build_context_synchronously
+              if (await _goBack()) {
                 Navigator.pop(context);
               }
             },
           ),
         ),
-        body: WebViewWidget(controller: controller),
+        body: Stack(
+          children: [
+            WebViewWidget(controller: controller),
+
+            if (isLoading)
+              const LinearProgressIndicator(minHeight: 3),
+          ],
+        ),
       ),
     );
   }
