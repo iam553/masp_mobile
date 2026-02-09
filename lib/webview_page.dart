@@ -17,7 +17,7 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController controller;
-  bool loading = true;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -28,73 +28,41 @@ class _WebViewPageState extends State<WebViewPage> {
       ..enableZoom(true)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageFinished: (_) {
-            setState(() {
-              loading = false;
-            });
+          onPageStarted: (url) {
+            setState(() => isLoading = true);
+          },
+          onPageFinished: (url) {
+            setState(() => isLoading = false);
           },
         ),
       )
       ..loadRequest(Uri.parse(widget.url));
   }
 
-  /// ✅ HANDLE TOMBOL BACK ANDROID
-  // ignore: unused_element
+  /// 🔥 INI YANG PALING PENTING
   Future<bool> _onWillPop() async {
     if (await controller.canGoBack()) {
-      controller.goBack();
-      return false; // jangan keluar app
+      controller.goBack(); // mundur di web
+      return false; // jangan keluar halaman
     }
-    return true; // keluar halaman
+    return true; // kalau sudah mentok, baru keluar
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      // ignore: deprecated_member_use
-      onPopInvoked: (didPop) async {
-        if (didPop) return;
-
-        if (await controller.canGoBack()) {
-          controller.goBack();
-        } else {
-          // ignore: use_build_context_synchronously
-          Navigator.pop(context);
-        }
-      },
+    // ignore: deprecated_member_use
+    return WillPopScope(
+      onWillPop: _onWillPop, // intercept tombol back
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
-
-          /// ✅ TOMBOL BACK DI APPBAR
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () async {
-              if (await controller.canGoBack()) {
-                controller.goBack();
-              } else {
-                // ignore: use_build_context_synchronously
-                Navigator.pop(context);
-              }
-            },
-          ),
-
-          actions: [
-            /// 🔥 tombol refresh (bonus biar keren)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                controller.reload();
-              },
-            ),
-          ],
+          centerTitle: true,
         ),
         body: Stack(
           children: [
             WebViewWidget(controller: controller),
 
-            if (loading)
+            if (isLoading)
               const Center(
                 child: CircularProgressIndicator(),
               ),
