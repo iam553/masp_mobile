@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class WebViewPage extends StatefulWidget {
-  final String url;
   final String title;
+  final String url;
 
   const WebViewPage({
     super.key,
-    required this.url,
     required this.title,
+    required this.url,
   });
 
   @override
@@ -17,7 +17,6 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController controller;
-  bool isLoading = true;
 
   @override
   void initState() {
@@ -25,55 +24,45 @@ class _WebViewPageState extends State<WebViewPage> {
 
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (_) => setState(() => isLoading = true),
-          onPageFinished: (_) => setState(() => isLoading = false),
-        ),
-      )
+      ..enableZoom(true)
       ..loadRequest(Uri.parse(widget.url));
   }
 
-  /// 🔥 BACK HANDLER PALING AMAN UNTUK SPA WEBSITE
-  Future<void> _handleBack() async {
-    try {
-      final result = await controller.runJavaScriptReturningResult(
-        'window.history.length',
-      );
-
-      final historyLength = int.tryParse(result.toString()) ?? 0;
-
-      if (historyLength > 1) {
-        await controller.runJavaScript('window.history.back();');
-      } else {
-        if (mounted) Navigator.pop(context);
-      }
-    } catch (_) {
-      if (mounted) Navigator.pop(context);
+  /// 🔥 INI KUNCINYA
+  Future<bool> _handleBack() async {
+    if (await controller.canGoBack()) {
+      controller.goBack(); // kembali ke halaman web sebelumnya
+      return false; // jangan keluar halaman
     }
+    return true; // kalau sudah tidak bisa → baru keluar
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      // ignore: deprecated_member_use
-      onPopInvoked: (_) async => _handleBack(),
+      onPopInvoked: (didPop) async {
+        if (await controller.canGoBack()) {
+          controller.goBack();
+        } else {
+          Navigator.pop(context);
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: _handleBack,
+            onPressed: () async {
+              if (await controller.canGoBack()) {
+                controller.goBack();
+              } else {
+                Navigator.pop(context);
+              }
+            },
           ),
         ),
-        body: Stack(
-          children: [
-            WebViewWidget(controller: controller),
-            if (isLoading)
-              const Center(child: CircularProgressIndicator()),
-          ],
-        ),
+        body: WebViewWidget(controller: controller),
       ),
     );
   }
