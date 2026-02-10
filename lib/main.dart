@@ -144,7 +144,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 22),
         decoration: BoxDecoration(
-          color: isDark ? Colors.grey[850] : Colors.white, // Ubah ke putih
+          color: isDark ? Colors.grey[850] : Colors.white,
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
@@ -437,20 +437,71 @@ class WebPage extends StatefulWidget {
 
 class _WebPageState extends State<WebPage> {
   late final WebViewController controller;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
+
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
+      ..setUserAgent(
+          "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 Chrome/100 Safari/537.36")
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (url) {
+            setState(() => isLoading = false);
+
+            /// FORCE RELOAD IMAGES (fix layanan informasi tidak muncul)
+            controller.runJavaScript(
+                "document.querySelectorAll('img').forEach(img => { img.style.display='block'; img.loading='eager'; });");
+          },
+        ),
+      )
       ..loadRequest(Uri.parse(widget.url));
+  }
+
+  /// HANDLE BACK BUTTON (ANDROID + APPBAR)
+  Future<bool> _handleBack() async {
+    if (await controller.canGoBack()) {
+      controller.goBack();
+      return false;
+    }
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: WebViewWidget(controller: controller),
+    // ignore: deprecated_member_use
+    return WillPopScope(
+      onWillPop: _handleBack,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async {
+              if (await controller.canGoBack()) {
+                controller.goBack();
+              } else {
+                // ignore: use_build_context_synchronously
+                Navigator.pop(context);
+              }
+            },
+          ),
+        ),
+        body: Stack(
+          children: [
+            WebViewWidget(controller: controller),
+
+            if (isLoading)
+              const Center(
+                child: CircularProgressIndicator(),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
