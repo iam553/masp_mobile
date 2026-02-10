@@ -148,7 +148,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              // ignore: deprecated_member_use
               color: isDark ? Colors.black54 : Colors.black.withOpacity(0.05),
               blurRadius: 14,
               offset: const Offset(0, 5),
@@ -414,7 +413,6 @@ class PremiumCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-              // ignore: deprecated_member_use
               color: isDark ? Colors.black54 : Colors.black.withOpacity(0.06),
               blurRadius: 16,
               offset: const Offset(0, 6))
@@ -447,19 +445,25 @@ class _WebPageState extends State<WebPage> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.white)
       ..setUserAgent(
-          "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 Chrome/100 Safari/537.36")
+          "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 Chrome/120 Safari/537.36")
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (url) {
             setState(() => isLoading = false);
 
-            /// FORCE RELOAD IMAGES (fix layanan informasi tidak muncul)
+            /// paksa reload image + lazy load fix
             controller.runJavaScript(
-                "document.querySelectorAll('img').forEach(img => { img.style.display='block'; img.loading='eager'; });");
+                "document.querySelectorAll('img').forEach(img => { img.loading='eager'; img.decoding='sync'; img.style.opacity='1'; });");
           },
         ),
       )
-      ..loadRequest(Uri.parse(widget.url));
+      ..loadRequest(
+        Uri.parse(widget.url),
+        headers: {
+          "Referer": widget.url,
+          "Access-Control-Allow-Origin": "*",
+        },
+      );
   }
 
   /// HANDLE BACK BUTTON (ANDROID + APPBAR)
@@ -473,7 +477,6 @@ class _WebPageState extends State<WebPage> {
 
   @override
   Widget build(BuildContext context) {
-    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: _handleBack,
       child: Scaffold(
@@ -485,7 +488,6 @@ class _WebPageState extends State<WebPage> {
               if (await controller.canGoBack()) {
                 controller.goBack();
               } else {
-                // ignore: use_build_context_synchronously
                 Navigator.pop(context);
               }
             },
