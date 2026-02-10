@@ -437,7 +437,6 @@ class WebPage extends StatefulWidget {
 
 class _WebPageState extends State<WebPage> {
   late final WebViewController controller;
-  bool isLoading = true;
 
   @override
   void initState() {
@@ -445,30 +444,41 @@ class _WebPageState extends State<WebPage> {
 
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.white)
-      ..setUserAgent(
-          "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 Chrome/120 Safari/537.36")
+      ..setBackgroundColor(const Color(0xFFFFFFFF))
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageFinished: (url) {
-            setState(() => isLoading = false);
+          onPageFinished: (url) async {
+            // Simpan username otomatis
+            await controller.runJavaScript('''
+              try {
+                const input = document.querySelector('input[type="text"], input[name*="user"], input[name*="email"]');
+                if(input){
+                  input.addEventListener('change', function(){
+                    localStorage.setItem('saved_username', this.value);
+                  });
 
-            /// paksa reload image + lazy load fix
-            controller.runJavaScript(
-                "document.querySelectorAll('img').forEach(img => { img.loading='eager'; img.decoding='sync'; img.style.opacity='1'; });");
+                  const saved = localStorage.getItem('saved_username');
+                  if(saved){
+                    input.value = saved;
+                  }
+                }
+              } catch(e) {}
+            ''');
           },
         ),
       )
       ..loadRequest(
         Uri.parse(widget.url),
-        headers: {
-          "Referer": widget.url,
-          "Access-Control-Allow-Origin": "*",
+        headers: const {
+          'User-Agent':
+              'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/99 Mobile Safari/537.36',
+          'Referer': 'https://masupra.sch.id/'
         },
       );
   }
 
   /// HANDLE BACK BUTTON (ANDROID + APPBAR)
+  // ignore: unused_element
   Future<bool> _handleBack() async {
     if (await controller.canGoBack()) {
       controller.goBack();
@@ -479,9 +489,19 @@ class _WebPageState extends State<WebPage> {
 
   @override
   Widget build(BuildContext context) {
-    // ignore: deprecated_member_use
-    return WillPopScope(
-      onWillPop: _handleBack,
+    return PopScope(
+      canPop: false,
+      // ignore: deprecated_member_use
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        if (await controller.canGoBack()) {
+          controller.goBack();
+        } else if (mounted) {
+          // ignore: use_build_context_synchronously
+          Navigator.pop(context);
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
@@ -490,23 +510,20 @@ class _WebPageState extends State<WebPage> {
             onPressed: () async {
               if (await controller.canGoBack()) {
                 controller.goBack();
-              } else {
+              } else if (mounted) {
                 // ignore: use_build_context_synchronously
                 Navigator.pop(context);
               }
             },
           ),
-        ),
-        body: Stack(
-          children: [
-            WebViewWidget(controller: controller),
-
-            if (isLoading)
-              const Center(
-                child: CircularProgressIndicator(),
-              ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => controller.reload(),
+            ),
           ],
         ),
+        body: WebViewWidget(controller: controller),
       ),
     );
   }
