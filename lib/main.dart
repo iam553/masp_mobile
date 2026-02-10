@@ -148,6 +148,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
+              // ignore: deprecated_member_use
               color: isDark ? Colors.black54 : Colors.black.withOpacity(0.05),
               blurRadius: 14,
               offset: const Offset(0, 5),
@@ -413,6 +414,7 @@ class PremiumCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
+              // ignore: deprecated_member_use
               color: isDark ? Colors.black54 : Colors.black.withOpacity(0.06),
               blurRadius: 16,
               offset: const Offset(0, 6))
@@ -477,6 +479,7 @@ class _WebPageState extends State<WebPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: _handleBack,
       child: Scaffold(
@@ -488,6 +491,7 @@ class _WebPageState extends State<WebPage> {
               if (await controller.canGoBack()) {
                 controller.goBack();
               } else {
+                // ignore: use_build_context_synchronously
                 Navigator.pop(context);
               }
             },
