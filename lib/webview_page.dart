@@ -68,8 +68,10 @@ class _WebViewPageState extends State<WebViewPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
+      // ignore: deprecated_member_use
       onPopInvoked: (didPop) async {
         if (await _goBack()) {
+          // ignore: use_build_context_synchronously
           Navigator.pop(context);
         }
       },
@@ -80,6 +82,7 @@ class _WebViewPageState extends State<WebViewPage> {
             icon: const Icon(Icons.arrow_back),
             onPressed: () async {
               if (await _goBack()) {
+                // ignore: use_build_context_synchronously
                 Navigator.pop(context);
               }
             },
